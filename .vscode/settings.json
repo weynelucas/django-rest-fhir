@@ -1,0 +1,21 @@
+{
+  "prettier.singleQuote": true,
+  "[python]": {
+    "editor.formatOnSave": true,
+    "editor.codeActionsOnSave": {
+      "source.organizeImports": true
+    },
+  },
+  "python.pythonPath": "env/bin/python",
+  "python.formatting.provider": "black",
+  "python.linting.lintOnSave": true,
+  "python.linting.flake8Enabled": true,
+  "python.linting.pylintEnabled": false,
+  "python.sortImports.args": [
+    "--settings-path=${workspaceFolder}/setup.cfg"
+  ],
+  "python.analysis.extraPaths": [
+    "rest_fhir",
+    "tests"
+  ]
+}
