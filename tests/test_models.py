@@ -26,6 +26,7 @@ class ResourceTestCase(TestCase):
             **resource_text,
         }
 
+        self.assertEqual(resource.resource_type, 'Patient')
         self.assertIsNotNone(resource.resource_version_id)
         self.assertEqual(
             resource.resource_version.resource_text,

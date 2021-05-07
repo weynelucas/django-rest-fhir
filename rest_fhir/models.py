@@ -47,6 +47,7 @@ class Resource(models.Model):
         resource_id = str(self.resource_id)
         resource_text = resource_text and {'id': resource_id, **resource_text}
 
+        self.resource_type = resource_text and resource_text['resourceType']
         super().save(**kwargs)
         self.set_resource_version(resource_text=resource_text, first=first)
 
