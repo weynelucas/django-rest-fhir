@@ -7,22 +7,16 @@ on:
   push:
     paths-ignore:
       - '**.md'
-      - docs/**
     branches:
-      - develop
       - 'master'
-      - 'stable/**'
     tags:
       - '*'
 
   pull_request:
     paths-ignore:
       - '**.md'
-      - docs/**
     branches:
-      - 'develop'
       - 'master'
-      - 'stable/**'
 
 jobs:
   build:
