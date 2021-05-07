@@ -9,13 +9,18 @@ class Resource(models.Model):
     resource_type = models.CharField(
         max_length=45, help_text=_('Contains the resource type (e.g. Patient)')
     )
-    resource_version = models.ForeignKey(
+    resource_version = models.PositiveIntegerField(
+        null=True,
+        default=0,
+        help_text=_('This is the current version ID of the resource'),
+    )
+    resource_version_obj = models.ForeignObject(
         'ResourceVersion',
         null=True,
-        on_delete=models.SET_NULL,
+        on_delete=models.DO_NOTHING,
+        from_fields=['resource_id', 'resource_version'],
+        to_fields=['resource_id', 'resource_version'],
         related_name='+',
-        db_column='resource_version_id',
-        help_text=_('This is the current version ID of the resource'),
     )
     published_at = models.DateTimeField(
         auto_now_add=True,
@@ -52,11 +57,15 @@ class Resource(models.Model):
         self.set_resource_version(resource_text=resource_text, first=first)
 
     def set_resource_version(self, resource_text=None, first=False):
-        version = self.history.create(resource_text=resource_text)
-        self.resource_version = version
-        self.updated_at = version.published_at
+        resource_version = self.resource_version + 1
+        resource_version_obj = self.history.create(
+            resource_version=resource_version, resource_text=resource_text
+        )
+
+        self.resource_version_obj = resource_version_obj
+        self.updated_at = resource_version_obj.published_at
         if first:
-            self.published_at = version.published_at
+            self.published_at = resource_version_obj.published_at
 
         super().save(
             update_fields=['resource_version', 'updated_at', 'published_at']
@@ -64,7 +73,17 @@ class Resource(models.Model):
 
 
 class ResourceVersion(models.Model):
-    resource_version = models.AutoField(primary_key=True)
+    persistent_id = models.AutoField(
+        primary_key=True,
+        db_column='pid',
+        help_text=_('The row persistent ID'),
+    )
+    resource_version = models.PositiveIntegerField(
+        help_text=_(
+            'The specific version (starting with 1) of the resource that this '
+            'row corresponds to'
+        )
+    )
     resource = models.ForeignKey(
         'Resource',
         on_delete=models.CASCADE,
@@ -83,6 +102,7 @@ class ResourceVersion(models.Model):
 
     class Meta:
         db_table = 'fhir_resource_ver'
-        ordering = ['resource_version']
+        unique_together = ['resource', 'resource_version']
+        ordering = ['resource', 'resource_version']
         verbose_name = 'resource'
         verbose_name_plural = 'resource versions'
