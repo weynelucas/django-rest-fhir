@@ -5,18 +5,7 @@ name: Test
 
 on:
   push:
-    paths-ignore:
-      - '**.md'
-    branches:
-      - 'master'
-    tags:
-      - '*'
-
-  pull_request:
-    paths-ignore:
-      - '**.md'
-    branches:
-      - 'master'
+    branches: [master]
 
 jobs:
   build:
