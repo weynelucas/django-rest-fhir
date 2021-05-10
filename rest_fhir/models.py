@@ -52,19 +52,23 @@ class Resource(models.Model):
         verbose_name = 'resource'
         verbose_name_plural = 'resources'
 
-    def save(self, resource_text=None, **kwargs):
+    def save(self, resource_content=None, **kwargs):
         first = self._state.adding
         resource_id = str(self.id)
-        resource_text = resource_text and {'id': resource_id, **resource_text}
 
-        self.resource_type = resource_text and resource_text['resourceType']
+        if resource_content:
+            resource_content = {'id': resource_id, **resource_content}
+            self.resource_type = resource_content['resourceType']
+
         super().save(**kwargs)
-        self.set_resource_version(resource_text=resource_text, first=first)
+        self.set_resource_version(
+            resource_content=resource_content, first=first
+        )
 
-    def set_resource_version(self, resource_text=None, first=False):
+    def set_resource_version(self, resource_content=None, first=False):
         version_id = self.version_id + 1
         version = self.history.create(
-            version_id=version_id, resource_text=resource_text
+            version_id=version_id, resource_content=resource_content
         )
 
         self.version = version
@@ -94,8 +98,10 @@ class ResourceVersion(models.Model):
         related_name='history',
         db_column='resource_id',
     )
-    resource_text = models.JSONField(
-        help_text=_('The actual full text of the resource being stored')
+    resource_content = models.JSONField(
+        null=True,
+        blank=True,
+        help_text=_('The actual full text of the resource being stored'),
     )
     published_at = models.DateTimeField(
         auto_now_add=True,

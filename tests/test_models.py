@@ -5,7 +5,7 @@ from rest_fhir.models import Resource
 
 class ResourceTestCase(TestCase):
     def test_create_resource(self):
-        resource_text = {
+        resource_content = {
             'resourceType': 'Patient',
             'name': [
                 {
@@ -19,17 +19,19 @@ class ResourceTestCase(TestCase):
         }
 
         resource = Resource()
-        resource.save(resource_text=resource_text)
+        resource.save(resource_content=resource_content)
 
-        resource_text_with_id = dict(
+        resource_content_with_id = dict(
             id=str(resource.id),
-            **resource_text,
+            **resource_content,
         )
 
         self.assertEqual(resource.resource_type, 'Patient')
         self.assertEqual(resource.version_id, 1)
         self.assertEqual(resource.version.version_id, resource.version_id)
-        self.assertEqual(resource.version.resource_text, resource_text_with_id)
+        self.assertEqual(
+            resource.version.resource_content, resource_content_with_id
+        )
         self.assertEqual(resource.published_at, resource.version.published_at)
         self.assertEqual(resource.updated_at, resource.version.published_at)
 
@@ -38,7 +40,7 @@ class ResourceTestCase(TestCase):
 
     def test_update_resource(self):
         # Creating the resource
-        resource_text = {
+        resource_content = {
             'resourceType': 'Organization',
             'name': 'XYZ Insurance',
             'alias': [
@@ -46,11 +48,11 @@ class ResourceTestCase(TestCase):
             ],
         }
         resource = Resource()
-        resource.save(resource_text=resource_text)
+        resource.save(resource_content=resource_content)
         first_version_obj = resource.version
 
         # Updating the resource
-        resource_text_updated = {
+        resource_content_updated = {
             'resourceType': 'Organization',
             'name': 'ACME Healthcare',
             'alias': [
@@ -58,16 +60,16 @@ class ResourceTestCase(TestCase):
                 'ACME Clinical Lab',
             ],
         }
-        resource_text_updated_with_id = dict(
+        resource_content_updated_with_id = dict(
             id=str(resource.id),
-            **resource_text_updated,
+            **resource_content_updated,
         )
-        resource.save(resource_text=resource_text_updated)
+        resource.save(resource_content=resource_content_updated)
         last_version_obj = resource.version
 
         self.assertIsNotNone(resource.version_id, 2)
         self.assertEqual(
-            last_version_obj.resource_text, resource_text_updated_with_id
+            last_version_obj.resource_content, resource_content_updated_with_id
         )
         self.assertEqual(resource.published_at, first_version_obj.published_at)
         self.assertEqual(resource.updated_at, last_version_obj.published_at)
