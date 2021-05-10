@@ -5,21 +5,26 @@ from django.utils.translation import gettext_lazy as _
 
 
 class Resource(models.Model):
-    resource_id = models.UUIDField(default=uuid.uuid4, primary_key=True)
+    id = models.UUIDField(
+        default=uuid.uuid4,
+        primary_key=True,
+        help_text=_('The Logical Id of the resource'),
+    )
     resource_type = models.CharField(
         max_length=45, help_text=_('Contains the resource type (e.g. Patient)')
     )
-    resource_version = models.PositiveIntegerField(
+    version_id = models.PositiveIntegerField(
         null=True,
         default=0,
-        help_text=_('This is the current version ID of the resource'),
+        db_column='vid',
+        help_text=_('This is the current Version Id of the resource'),
     )
-    resource_version_obj = models.ForeignObject(
+    version = models.ForeignObject(
         'ResourceVersion',
         null=True,
         on_delete=models.DO_NOTHING,
-        from_fields=['resource_id', 'resource_version'],
-        to_fields=['resource_id', 'resource_version'],
+        from_fields=['id', 'version_id'],
+        to_fields=['resource_id', 'version_id'],
         related_name='+',
     )
     published_at = models.DateTimeField(
@@ -49,7 +54,7 @@ class Resource(models.Model):
 
     def save(self, resource_text=None, **kwargs):
         first = self._state.adding
-        resource_id = str(self.resource_id)
+        resource_id = str(self.id)
         resource_text = resource_text and {'id': resource_id, **resource_text}
 
         self.resource_type = resource_text and resource_text['resourceType']
@@ -57,32 +62,31 @@ class Resource(models.Model):
         self.set_resource_version(resource_text=resource_text, first=first)
 
     def set_resource_version(self, resource_text=None, first=False):
-        resource_version = self.resource_version + 1
-        resource_version_obj = self.history.create(
-            resource_version=resource_version, resource_text=resource_text
+        version_id = self.version_id + 1
+        version = self.history.create(
+            version_id=version_id, resource_text=resource_text
         )
 
-        self.resource_version_obj = resource_version_obj
-        self.updated_at = resource_version_obj.published_at
+        self.version = version
+        self.updated_at = version.published_at
         if first:
-            self.published_at = resource_version_obj.published_at
+            self.published_at = version.published_at
 
-        super().save(
-            update_fields=['resource_version', 'updated_at', 'published_at']
-        )
+        super().save(update_fields=['version_id', 'updated_at', 'published_at'])
 
 
 class ResourceVersion(models.Model):
-    persistent_id = models.AutoField(
+    id = models.AutoField(
         primary_key=True,
         db_column='pid',
-        help_text=_('The row persistent ID'),
+        help_text=_('The row Persistent Id'),
     )
-    resource_version = models.PositiveIntegerField(
+    version_id = models.PositiveIntegerField(
+        db_column='vid',
         help_text=_(
             'The specific version (starting with 1) of the resource that this '
             'row corresponds to'
-        )
+        ),
     )
     resource = models.ForeignKey(
         'Resource',
@@ -102,7 +106,7 @@ class ResourceVersion(models.Model):
 
     class Meta:
         db_table = 'fhir_resource_ver'
-        unique_together = ['resource', 'resource_version']
-        ordering = ['resource', 'resource_version']
+        unique_together = ['resource', 'version_id']
+        ordering = ['resource', 'version_id']
         verbose_name = 'resource'
         verbose_name_plural = 'resource versions'

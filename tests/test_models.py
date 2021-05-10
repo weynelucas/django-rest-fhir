@@ -21,34 +21,20 @@ class ResourceTestCase(TestCase):
         resource = Resource()
         resource.save(resource_text=resource_text)
 
-        resource_text_with_id = {
-            'id': str(resource.resource_id),
+        resource_text_with_id = dict(
+            id=str(resource.id),
             **resource_text,
-        }
+        )
 
         self.assertEqual(resource.resource_type, 'Patient')
-        self.assertEqual(resource.resource_version, 1)
-        self.assertEqual(
-            resource.resource_version_obj.resource_version,
-            resource.resource_version,
-        )
-        self.assertEqual(
-            resource.resource_version_obj.resource_text,
-            resource_text_with_id,
-        )
-        self.assertEqual(
-            resource.published_at,
-            resource.resource_version_obj.published_at,
-        )
-        self.assertEqual(
-            resource.updated_at,
-            resource.resource_version_obj.published_at,
-        )
+        self.assertEqual(resource.version_id, 1)
+        self.assertEqual(resource.version.version_id, resource.version_id)
+        self.assertEqual(resource.version.resource_text, resource_text_with_id)
+        self.assertEqual(resource.published_at, resource.version.published_at)
+        self.assertEqual(resource.updated_at, resource.version.published_at)
 
         self.assertEqual(resource.history.count(), 1)
-        self.assertEqual(
-            resource.resource_version_obj, resource.history.first()
-        )
+        self.assertEqual(resource.version, resource.history.first())
 
     def test_update_resource(self):
         # Creating the resource
@@ -61,7 +47,7 @@ class ResourceTestCase(TestCase):
         }
         resource = Resource()
         resource.save(resource_text=resource_text)
-        first_version_obj = resource.resource_version_obj
+        first_version_obj = resource.version
 
         # Updating the resource
         resource_text_updated = {
@@ -72,14 +58,14 @@ class ResourceTestCase(TestCase):
                 'ACME Clinical Lab',
             ],
         }
-        resource_text_updated_with_id = {
-            'id': str(resource.resource_id),
+        resource_text_updated_with_id = dict(
+            id=str(resource.id),
             **resource_text_updated,
-        }
+        )
         resource.save(resource_text=resource_text_updated)
-        last_version_obj = resource.resource_version_obj
+        last_version_obj = resource.version
 
-        self.assertIsNotNone(resource.resource_version, 2)
+        self.assertIsNotNone(resource.version_id, 2)
         self.assertEqual(
             last_version_obj.resource_text, resource_text_updated_with_id
         )
