@@ -1,11 +1,6 @@
-import calendar
-
-from .read import ReadResourceMixin
+from .conditional_read import ConditionalReadMixin
 
 
-class VReadResourceMixin(ReadResourceMixin):
+class VReadResourceMixin(ConditionalReadMixin):
     def vread(self, request, *args, **kwargs):
-        return self.read(request, *args, **kwargs)
-
-    def last_modified_func(self, request, obj):
-        return calendar.timegm(obj.published_at.utctimetuple())
+        return self.conditional_read(request, *args, **kwargs)

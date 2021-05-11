@@ -1,11 +1,15 @@
+from typing import Union
+
 from rest_framework.generics import GenericAPIView
 
 from .exceptions import Gone
-from .models import Resource
+from .models import Resource, ResourceVersion
+
+FhirResource = Union[Resource, ResourceVersion]
 
 
 class FhirGenericAPIView(GenericAPIView):
-    def get_object(self) -> Resource:
+    def get_object(self) -> FhirResource:
         object = super().get_object()
 
         # A GET for a deleted resource returns a 410 status code
