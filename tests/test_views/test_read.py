@@ -1,18 +1,13 @@
-import calendar
-
 from rest_framework import status
 from rest_framework.test import APITestCase, URLPatternsTestCase
 
 from django.urls import path, reverse
 from django.urls.conf import include
 from django.utils import timezone
-from django.utils.http import http_date
 
 from rest_fhir.models import Resource
 
-
-def to_http_date(dt):
-    return http_date(calendar.timegm(dt.utctimetuple()))
+from ..utils import to_http_date
 
 
 class ReadAPIViewTestCase(APITestCase, URLPatternsTestCase):
@@ -20,7 +15,7 @@ class ReadAPIViewTestCase(APITestCase, URLPatternsTestCase):
         path('fhir/', include('rest_fhir.urls')),
     ]
 
-    def read_resource(self, resource, **kwargs):
+    def read(self, resource, **kwargs):
         resource_id = str(resource.id)
         resource_type = resource.resource_type
 
@@ -40,7 +35,7 @@ class ReadAPIViewTestCase(APITestCase, URLPatternsTestCase):
             }
         )
 
-        response = self.read_resource(resource)
+        response = self.read(resource)
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertIn('id', response.data)
@@ -57,7 +52,7 @@ class ReadAPIViewTestCase(APITestCase, URLPatternsTestCase):
             }
         )
 
-        response = self.read_resource(resource)
+        response = self.read(resource)
 
         instant_fmt = '%Y-%m-%dT%H:%M:%S.%fZ'
         last_updated = resource.updated_at.strftime(instant_fmt)
@@ -81,7 +76,7 @@ class ReadAPIViewTestCase(APITestCase, URLPatternsTestCase):
             }
         )
 
-        response = self.read_resource(resource)
+        response = self.read(resource)
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertTrue(response.has_header('ETag'))
@@ -97,7 +92,7 @@ class ReadAPIViewTestCase(APITestCase, URLPatternsTestCase):
         )
         last_modified = to_http_date(resource.updated_at)
 
-        response = self.read_resource(resource)
+        response = self.read(resource)
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertTrue(response.has_header('Last-Modified'))
@@ -107,7 +102,7 @@ class ReadAPIViewTestCase(APITestCase, URLPatternsTestCase):
         # Non-persistent resource
         resource = Resource(resource_type='MedicationRequest')
 
-        response = self.read_resource(resource)
+        response = self.read(resource)
 
         self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
 
@@ -118,7 +113,7 @@ class ReadAPIViewTestCase(APITestCase, URLPatternsTestCase):
         )
         resource.save()
 
-        response = self.read_resource(resource)
+        response = self.read(resource)
 
         self.assertEqual(response.status_code, status.HTTP_410_GONE)
 
@@ -134,11 +129,11 @@ class ReadAPIViewTestCase(APITestCase, URLPatternsTestCase):
             }
         )
 
-        response_if_none_match = self.read_resource(
+        response_if_none_match = self.read(
             resource,
             HTTP_IF_NONE_MATCH='W/"%s"' % resource.version_id,
         )
-        response_if_modified_since = self.read_resource(
+        response_if_modified_since = self.read(
             resource,
             HTTP_IF_MODIFIED_SINCE=to_http_date(resource.updated_at),
         )
