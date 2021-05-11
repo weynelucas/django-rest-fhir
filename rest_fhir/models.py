@@ -52,18 +52,34 @@ class Resource(models.Model):
         verbose_name = 'resource'
         verbose_name_plural = 'resources'
 
+    @property
+    def resource_id(self):
+        return self.id
+
+    @property
+    def resource_content(self):
+        if self.deleted_at is not None:
+            return self.version.resource_content
+
+    @property
+    def last_updated(self):
+        return self.updated_at
+
     def save(self, resource_content=None, **kwargs):
         first = self._state.adding
-        resource_id = str(self.id)
 
+        # Retrieve type from content and force Logical Id
         if resource_content:
-            resource_content = {'id': resource_id, **resource_content}
+            resource_content = {'id': str(self.id), **resource_content}
             self.resource_type = resource_content['resourceType']
 
         super().save(**kwargs)
-        self.set_resource_version(
-            resource_content=resource_content, first=first
-        )
+
+        # Create a history entry from content
+        if resource_content:
+            self.set_resource_version(
+                resource_content=resource_content, first=first
+            )
 
     def set_resource_version(self, resource_content=None, first=False):
         version_id = self.version_id + 1
@@ -109,6 +125,13 @@ class ResourceVersion(models.Model):
             'Date that version was created version of the resource was created'
         ),
     )
+    deleted_at = models.DateTimeField(
+        null=True,
+        help_text=_(
+            'Date that version of the resource marked as delete was created. '
+            'Deleted versions of a resource have no content'
+        ),
+    )
 
     class Meta:
         db_table = 'fhir_resource_ver'
@@ -116,3 +139,7 @@ class ResourceVersion(models.Model):
         ordering = ['resource', 'version_id']
         verbose_name = 'resource'
         verbose_name_plural = 'resource versions'
+
+    @property
+    def last_updated(self):
+        return self.published_at
