@@ -32,3 +32,10 @@ class VReadAPIView(mixins.VReadResourceMixin, generics.FhirGenericAPIView):
 
     def get(self, request, *args, **kwargs):
         return self.vread(request, *args, **kwargs)
+
+
+class CreateAPIView(mixins.CreateResourceMixin, generics.FhirGenericAPIView):
+    serializer_class = serializer.ResourceSerializer
+
+    def post(self, request, *args, **kwargs):
+        return self.create(request, *args, **kwargs)

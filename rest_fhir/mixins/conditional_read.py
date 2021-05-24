@@ -1,6 +1,7 @@
 import calendar
 from typing import Union
 
+import dateutil.parser
 from rest_framework import status
 from rest_framework.response import Response
 
@@ -15,54 +16,48 @@ FhirResource = Union[Resource, ResourceVersion]
 class ConditionalReadMixin:
     def conditional_read(self, request, *args, **kwargs):
         instance = self.get_object()
+        serializer = self.get_serializer(instance)
+        res_data = serializer.data
 
         # Test If-Modified-Since and If-None-Match preconditions
         # https://www.hl7.org/fhir/http.html#cread
-        etag, last_modified = self.get_conditional_args(request, instance)
+        etag, last_modified = self.get_conditional_args(res_data)
         response = get_conditional_response(request, etag, last_modified)
         if response is not None:
             return response
 
         # Set revelant header on the response if request method is safe
-        headers = self.get_success_headers(request, etag, last_modified)
-        serializer = self.get_serializer(instance)
+        headers = self.get_conditional_headers(res_data)
 
         return Response(
-            data=serializer.data,
+            data=res_data,
             status=status.HTTP_200_OK,
             headers=headers,
         )
 
-    def etag_func(self, request, obj: FhirResource) -> str:
-        return 'W/"%s"' % obj.version_id
+    def etag_func(self, data) -> str:
+        return 'W/"%s"' % data['meta']['versionId']
 
-    def last_modified_func(self, request, obj: FhirResource) -> str:
-        return calendar.timegm(obj.last_updated.utctimetuple())
+    def last_modified_func(self, data) -> str:
+        dt = dateutil.parser.parse(data['meta']['lastUpdated'])
+        return calendar.timegm(dt.utctimetuple())
 
-    def get_conditional_args(self, request, obj: FhirResource = None):
-        etag = self.etag_func(request, obj)
-        last_modified = self.last_modified_func(request, obj)
+    def get_conditional_args(self, data: dict):
+        etag = self.etag_func(data)
+        last_modified = self.last_modified_func(data)
         return (
             etag,
             last_modified,
         )
 
-    def get_success_headers(
-        self,
-        request,
-        etag=None,
-        last_modified=None,
-        obj: FhirResource = None,
-    ):
-        if obj and not (etag and last_modified):
-            etag, last_modified = self.get_conditional_args(request, obj)
+    def get_conditional_headers(self, data):
+        etag, last_modified = self.get_conditional_args(data)
 
         headers = dict()
-        if request.method in ('GET', 'HEAD'):
-            if etag:
-                headers['ETag'] = etag
+        if etag:
+            headers['ETag'] = etag
 
-            if last_modified:
-                headers['Last-Modified'] = http_date(last_modified)
+        if last_modified:
+            headers['Last-Modified'] = http_date(last_modified)
 
         return headers

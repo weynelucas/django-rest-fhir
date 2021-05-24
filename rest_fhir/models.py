@@ -58,7 +58,7 @@ class Resource(models.Model):
 
     @property
     def resource_content(self):
-        if self.deleted_at is not None:
+        if self.deleted_at is None:
             return self.version.resource_content
 
     @property

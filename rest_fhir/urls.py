@@ -1,6 +1,6 @@
 from django.urls import path
 
-from .views import ReadAPIView, VReadAPIView
+from .views import CreateAPIView, ReadAPIView, VReadAPIView
 
 urlpatterns = [
     path('<str:type>/<uuid:id>/', ReadAPIView.as_view(), name='read'),
@@ -9,4 +9,5 @@ urlpatterns = [
         VReadAPIView.as_view(),
         name='vread',
     ),
+    path('<str:type>/', CreateAPIView.as_view(), name='create'),
 ]
