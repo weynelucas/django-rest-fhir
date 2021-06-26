@@ -76,3 +76,35 @@ class ResourceTestCase(TestCase):
         self.assertEqual(resource.history.count(), 2)
         self.assertEqual(first_version_obj, resource.history.first())
         self.assertEqual(last_version_obj, resource.history.last())
+
+    def test_delete_resource(self):
+        resource_content = {
+            'resourceType': 'Location',
+            'name': 'South Wing, second floor',
+            'description': 'Second floor of the Old South Wing, formerly in use by Psychiatry',
+        }
+
+        resource = Resource()
+        resource.save(resource_content=resource_content)
+        version = resource.version
+
+        num_objs_deleted, per_obj_deleted = resource.delete()
+
+        self.assertEqual(num_objs_deleted, 2)
+        self.assertEqual(
+            per_obj_deleted,
+            {
+                'rest_fhir.Resource': 1,
+                'rest_fhir.ResourceVersion': 1,
+            },
+        )
+
+        self.assertIsNotNone(resource.deleted_at)
+        self.assertEqual(resource.history.count(), 2)
+
+        [first_version, deleted_version] = resource.history.all()
+
+        self.assertEqual(version, first_version)
+        self.assertIsNotNone(deleted_version.deleted_at)
+        self.assertIsNone(deleted_version.resource_content)
+        self.assertIsNotNone(resource.deleted_at, deleted_version.deleted_at)

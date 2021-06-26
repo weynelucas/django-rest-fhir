@@ -1,13 +1,19 @@
 from django.urls import path
 
-from .views import CreateAPIView, ReadAPIView, VReadAPIView
+from .views import ReadUpdateDeleteAPIView, SearchCreateAPIView, VReadAPIView
 
 urlpatterns = [
-    path('<str:type>/<uuid:id>/', ReadAPIView.as_view(), name='read'),
+    # Instance Level Interactions
+    path(
+        '<str:type>/<uuid:id>/',
+        ReadUpdateDeleteAPIView.as_view(),
+        name='read-update-delete',
+    ),
     path(
         '<str:type>/<uuid:id>/_history/<int:vid>',
         VReadAPIView.as_view(),
         name='vread',
     ),
-    path('<str:type>/', CreateAPIView.as_view(), name='create'),
+    # Type Level Interactions
+    path('<str:type>/', SearchCreateAPIView.as_view(), name='search-create'),
 ]
