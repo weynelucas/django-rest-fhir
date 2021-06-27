@@ -4,6 +4,7 @@ from .models import Resource, ResourceVersion
 
 class ReadUpdateDeleteAPIView(
     mixins.ReadResourceMixin,
+    mixins.UpdateResourceMixin,
     mixins.DeleteResourceMixin,
     generics.FhirGenericAPIView,
 ):
@@ -17,6 +18,9 @@ class ReadUpdateDeleteAPIView(
 
     def get(self, request, *args, **kwargs):
         return self.read(request, *args, **kwargs)
+
+    def put(self, request, *args, **kwargs):
+        return self.update(request, *args, **kwargs)
 
     def delete(self, request, *args, **kwargs):
         return self.destroy(request, *args, **kwargs)

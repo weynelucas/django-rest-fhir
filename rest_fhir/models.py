@@ -113,6 +113,9 @@ class Resource(models.Model):
         if delete:
             self.deleted_at = version.deleted_at
 
+        if self.deleted_at and not delete:
+            self.deleted_at = None
+
         super().save(
             update_fields=[
                 'version_id',
