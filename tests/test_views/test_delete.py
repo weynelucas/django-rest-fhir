@@ -24,11 +24,33 @@ class DeleteAPIViewTestCase(APITestCase, URLPatternsTestCase):
             kwargs={'type': 'Organization', 'id': str(resource.id)},
         )
 
-        delete_response = self.client.delete(instance_url, format='json')
+        delete_res = self.client.delete(instance_url, format='json')
+        self.assertEqual(delete_res.status_code, status.HTTP_204_NO_CONTENT)
+        self.assertIsNone(delete_res.data)
 
-        self.assertEqual(
-            delete_response.status_code, status.HTTP_204_NO_CONTENT
+        # Non-version specific reads
+        read_res = self.client.get(instance_url, format='json')
+        self.assertEqual(read_res.status_code, status.HTTP_410_GONE)
+
+        # Version specific reads
+        def vread_url(vid):
+            return reverse(
+                'vread',
+                kwargs={
+                    'type': 'Organization',
+                    'id': str(resource.id),
+                    'vid': vid,
+                },
+            )
+
+        self.assertEqual(resource.history.count(), 2)
+
+        [first_vid, deleted_vid] = resource.history.values_list(
+            'version_id', flat=True
         )
 
-        read_response = self.client.get(instance_url, format='json')
-        self.assertEqual(read_response.status_code, status.HTTP_410_GONE)
+        vread_res = self.client.get(vread_url(first_vid))
+        self.assertEqual(vread_res.status_code, status.HTTP_200_OK)
+
+        vread_deleted_res = self.client.get(vread_url(deleted_vid))
+        self.assertEqual(vread_deleted_res.status_code, status.HTTP_410_GONE)
