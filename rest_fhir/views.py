@@ -1,9 +1,13 @@
-from . import generics, mixins, serializer
+from . import generics, mixins, serializers
 from .models import Resource, ResourceVersion
 
 
-class ReadAPIView(mixins.ReadResourceMixin, generics.FhirGenericAPIView):
-    serializer_class = serializer.ResourceSerializer
+class ReadUpdateDeleteAPIView(
+    mixins.ReadResourceMixin,
+    mixins.DeleteResourceMixin,
+    generics.FhirGenericAPIView,
+):
+    serializer_class = serializers.ResourceSerializer
     lookup_field = 'id'
 
     def get_queryset(self):
@@ -14,9 +18,12 @@ class ReadAPIView(mixins.ReadResourceMixin, generics.FhirGenericAPIView):
     def get(self, request, *args, **kwargs):
         return self.read(request, *args, **kwargs)
 
+    def delete(self, request, *args, **kwargs):
+        return self.destroy(request, *args, **kwargs)
+
 
 class VReadAPIView(mixins.VReadResourceMixin, generics.FhirGenericAPIView):
-    serializer_class = serializer.ResourceSerializer
+    serializer_class = serializers.ResourceSerializer
     lookup_field = 'version_id'
     lookup_url_kwarg = 'vid'
 
@@ -34,8 +41,10 @@ class VReadAPIView(mixins.VReadResourceMixin, generics.FhirGenericAPIView):
         return self.vread(request, *args, **kwargs)
 
 
-class CreateAPIView(mixins.CreateResourceMixin, generics.FhirGenericAPIView):
-    serializer_class = serializer.ResourceSerializer
+class SearchCreateAPIView(
+    mixins.CreateResourceMixin, generics.FhirGenericAPIView
+):
+    serializer_class = serializers.ResourceSerializer
 
     def post(self, request, *args, **kwargs):
         return self.create(request, *args, **kwargs)

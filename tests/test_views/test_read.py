@@ -20,7 +20,10 @@ class ReadAPIViewTestCase(APITestCase, URLPatternsTestCase):
         resource_type = resource.resource_type
 
         return self.client.get(
-            reverse('read', kwargs={'type': resource_type, 'id': resource_id}),
+            reverse(
+                'read-update-delete',
+                kwargs={'type': resource_type, 'id': resource_id},
+            ),
             **kwargs,
         )
 

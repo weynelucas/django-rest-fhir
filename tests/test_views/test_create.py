@@ -17,7 +17,7 @@ class CreateAPIViewTestCase(APITestCase, URLPatternsTestCase):
         resource_type = data['resourceType']
 
         return self.client.post(
-            reverse('create', kwargs={'type': resource_type}),
+            reverse('search-create', kwargs={'type': resource_type}),
             data=data,
             format='json',
             **kwargs,

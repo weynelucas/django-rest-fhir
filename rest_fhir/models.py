@@ -1,6 +1,8 @@
 import uuid
+from typing import Dict, Tuple
 
 from django.db import models
+from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
 
 
@@ -81,18 +83,45 @@ class Resource(models.Model):
                 resource_content=resource_content, first=first
             )
 
-    def set_resource_version(self, resource_content=None, first=False):
+    def delete(
+        self, using=None, keep_parents=False
+    ) -> Tuple[int, Dict[str, int]]:
+        self.set_resource_version(delete=True)
+
+        per_obj_deleted = {}
+        per_obj_deleted['rest_fhir.Resource'] = 1
+        per_obj_deleted['rest_fhir.ResourceVersion'] = 1
+        return (2, per_obj_deleted)
+
+    def set_resource_version(
+        self, resource_content=None, first=False, delete=False, **kwargs
+    ):
         version_id = self.version_id + 1
+        deleted_at = timezone.now() if delete else None
         version = self.history.create(
-            version_id=version_id, resource_content=resource_content
+            version_id=version_id,
+            resource_content=resource_content,
+            deleted_at=deleted_at,
         )
 
         self.version = version
         self.updated_at = version.published_at
+
         if first:
             self.published_at = version.published_at
 
-        super().save(update_fields=['version_id', 'updated_at', 'published_at'])
+        if delete:
+            self.deleted_at = version.deleted_at
+
+        super().save(
+            update_fields=[
+                'version_id',
+                'updated_at',
+                'published_at',
+                'deleted_at',
+            ],
+            **kwargs,
+        )
 
 
 class ResourceVersion(models.Model):
